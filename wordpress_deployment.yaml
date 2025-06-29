@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wordpress
+  labels:
+    app: wordpress
+spec:
+  selector:
+    matchLabels:
+      app: wordpress
+      tier: frontend
+  strategy:
+    type: Recreate
+      #replicas: 1
+  template:
+    metadata:
+      labels:
+        app: wordpress
+        tier: frontend
+      annotations:
+        gke-gcsfuse/volumes: "true"
+    spec:
+      serviceAccountName: mysvc
+      containers:
+      - image: us-central1-docker.pkg.dev/nice-tiger-461104-c4/wordpress/wordpresscicd:latest
+        name: wordpress
+        env:
+        - name: WORDPRESS_DB_HOST
+          value: 10.72.160.3
+        - name: WORDPRESS_DB_NAME
+          value: wordpress
+        - name: WORDPRESS_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: user-password
+        - name: WORDPRESS_DB_USER
+          value: myuser
+        ports:
+        - containerPort: 80
+          name: wordpress
+        volumeMounts:
+        - name: wordpress-storage
+          mountPath: /var/www/html
+        
+
+      volumes:
+      - name: wordpress-storage
+        persistentVolumeClaim:
+          claimName: gcs-fuse-csi-static-pvc
