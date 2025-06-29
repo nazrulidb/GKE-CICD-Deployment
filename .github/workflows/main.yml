@@ -7,12 +7,11 @@ on:
 
 env:
   PROJECT_ID: ${{ secrets.GKE_PROJECT }}
-  GKE_CLUSTER: gke-cicd    # cluster name
-  GKE_ZONE: us-central1   # cluster zone
-  IMAGE: us-central1-docker.pkg.dev/nice-tiger-461104-c4/wordpress/wordpresscicd # image name
-  IMAGE_TAG: latest # image tag
-  GAR_ZONE: us-central1 # artifact registry zone
-  GAR_REPO: wordpress # artifact registry repository
+  GKE_CLUSTER: gke-cicd
+  GKE_ZONE: us-central1
+  GAR_REPO: wordpress # Name of your Artifact Registry repo
+  IMAGE_NAME: wordpresscicd # Just the name of the image
+  IMAGE_TAG: latest
 
 jobs:
   setup-build-publish-deploy:
@@ -20,12 +19,18 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
 
+    # IMPORTANT: Add permissions for Workload Identity Federation (best practice)
+    # or to allow the action to configure the docker credential helper.
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
     steps:
     - name: Checkout
       uses: actions/checkout@v3
 
-    # Setup gcloud CLI
-    - id: 'auth'
+    - name: 'Authenticate to Google Cloud'
+      id: 'auth'
       uses: 'google-github-actions/auth@v2'
       with:
         credentials_json: '${{ secrets.GKE_SA_KEY }}'
@@ -33,34 +38,33 @@ jobs:
     - name: 'Set up Cloud SDK'
       uses: 'google-github-actions/setup-gcloud@v2'
 
-    # Configure Docker to use the gcloud command-line tool as a credential
-    # helper for authentication
-    - name: Docker configuration
-      run: |-
-        gcloud auth print-access-token | docker login -u oauth2accesstoken --password-stdin https://$GAR_ZONE-docker.pkg.dev
+    # The Docker login step has been REMOVED.
+    # The 'auth' action automatically configures the Docker credential helper.
 
-    # Get the GKE credentials so we can deploy to the cluster
-    - name: Set up GKE credentials
-      uses: google-github-actions/get-gke-credentials@v0
+    - name: 'Set up GKE credentials'
+      # Use an updated version of the action
+      uses: 'google-github-actions/get-gke-credentials@v1'
       with:
         cluster_name: ${{ env.GKE_CLUSTER }}
         location: ${{ env.GKE_ZONE }}
 
-    # Build the Docker image
-    - name: Build
+    - name: 'Build Docker image'
       run: |-
+        # CORRECTED: Construct the full image name here for consistency
+        FULL_IMAGE_NAME="${{ env.GKE_ZONE }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.GAR_REPO }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
         docker build \
-          --tag "$GAR_ZONE-docker.pkg.dev/$PROJECT_ID/$GAR_REPO/$IMAGE:$IMAGE_TAG" \
+          --tag "$FULL_IMAGE_NAME" \
           --build-arg GITHUB_SHA="$GITHUB_SHA" \
           --build-arg GITHUB_REF="$GITHUB_REF" \
           .
-    # Push the Docker image to Google Container Registry
-    - name: Publish
-      run: |-
-        docker push "$GAR_ZONE-docker.pkg.dev/$PROJECT_ID/$GAR_REPO/$IMAGE:$IMAGE_TAG"
 
-    # Deploy the Docker image to the GKE cluster
-    - name: Deploy
+    - name: 'Publish Docker image to GAR'
+      run: |-
+        # CORRECTED: Use the same full image name variable
+        FULL_IMAGE_NAME="${{ env.GKE_ZONE }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.GAR_REPO }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}"
+        docker push "$FULL_IMAGE_NAME"
+
+    - name: 'Deploy to GKE'
       run: |-
         kubectl apply -f wordpress_deployment.yaml
         kubectl get pods
