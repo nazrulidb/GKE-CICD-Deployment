@@ -35,7 +35,7 @@ jobs:
       uses: 'google-github-actions/auth@v2'
       with:
         # NOTE: Make sure this name matches your secret in GitHub Settings
-        credentials_json: '${{ secrets.GKE_SA_KEY }}'
+        credentials_json: '${{ secrets.GK_SA_KEY }}'
 
     # This step is recommended to ensure gcloud is fully available
     - name: 'Set up Cloud SDK'
