@@ -28,6 +28,13 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
 
+    - name: 'Debug: Check if secrets are loaded'
+      # The if: always() ensures this step runs even if others fail
+      if: always()
+      run: |
+        echo "Is GKE_SA_KEY empty? ==> ${{ secrets.GKE_SA_KEY == '' }}"
+        echo "Is GKE_PROJECT empty? ==> ${{ secrets.GKE_PROJECT == '' }}"  
+
     - name: 'Authenticate to Google Cloud'
       id: 'auth'
       uses: 'google-github-actions/auth@v2'
