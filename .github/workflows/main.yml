@@ -16,13 +16,7 @@ jobs:
   setup-build-publish-deploy:
     name: Setup, Build, Publish, and Deploy
     runs-on: ubuntu-latest
-    environment: production
-
-    # IMPORTANT: Add permissions for Workload Identity Federation (best practice)
-    # or to allow the action to configure the docker credential helper.
-    permissions:
-      contents: 'read'
-      id-token: 'write'
+    #environment: production
 
     steps:
     - name: Checkout
