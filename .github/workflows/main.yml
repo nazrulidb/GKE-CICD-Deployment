@@ -26,14 +26,14 @@ jobs:
       # The if: always() ensures this step runs even if others fail
       if: always()
       run: |
-        echo "Is GKE_SA_KEY empty? ==> ${{ secrets.GKE_SA_KEY == '' }}"
+        echo "Is GKE_SA_KEY empty? ==> ${{ secrets.GK_SA_KEY == '' }}"
         echo "Is GKE_PROJECT empty? ==> ${{ secrets.GKE_PROJECT == '' }}"  
 
     - name: 'Authenticate to Google Cloud'
       id: 'auth'
       uses: 'google-github-actions/auth@v2'
       with:
-        credentials_json: '${{ secrets.GKE_SA_KEY }}'
+        credentials_json: '${{ secrets.GK_SA_KEY }}'
 
     - name: 'Set up Cloud SDK'
       uses: 'google-github-actions/setup-gcloud@v2'
