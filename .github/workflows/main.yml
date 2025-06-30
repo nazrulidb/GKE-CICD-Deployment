@@ -50,6 +50,10 @@ jobs:
         cluster_name: ${{ env.GKE_CLUSTER }}
         location: ${{ env.GKE_LOCATION }}
 
+    - name: Configure Docker
+      run: |
+        gcloud --quiet auth configure-docker "$GKE_LOCATION-docker.pkg.dev"
+
     - name: 'Build Docker image'
       run: |-
         # Use GKE_LOCATION consistently
