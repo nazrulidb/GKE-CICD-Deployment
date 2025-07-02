@@ -42,13 +42,9 @@ spec:
         volumeMounts:
         - name: wordpress-storage
           mountPath: /var/www/html
-        - name: plugins
-          mountPath: /var/www/html/wp-content/plugins
 
       volumes:
       - name: wordpress-storage
         persistentVolumeClaim:
           claimName: gcs-fuse-csi-static-pvc
-      - name: plugins
-        persistentVolumeClaim:
-          claimName: plugins-pvc
+      
